@@ -4,12 +4,11 @@ import Task exposing (Task)
 import Window exposing (Size)
 import WebGL.Texture exposing (Error, Texture)
 import Html
-import View.Font as Font
 import Html exposing (Html, div, textarea)
 import Html.Events exposing (onInput)
 import Html.Attributes exposing (value, autofocus, height, src, style, width, attribute)
 import WebGL exposing (Entity)
-import View.Font as Font exposing (Text)
+import Font exposing (Text)
 import Navigation
 import Http
 

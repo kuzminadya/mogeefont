@@ -1,4 +1,4 @@
-module View.Font
+module Font
     exposing
         ( text
         , render
@@ -13,7 +13,7 @@ import WebGL.Texture as Texture exposing (Error, defaultOptions)
 import Dict exposing (Dict)
 import String
 import Task
-import View.FontData exposing (font, fontSrc, CharInfo)
+import FontData exposing (font, fontSrc, CharInfo)
 
 
 emHeight : Float
@@ -173,8 +173,6 @@ bearingsDict =
         , ( "Г", ( 0, 0 ) )
         , ( "ч", ( -1, 1 ) )
         , ( "Ъ", ( -1, 1 ) )
-
-        -- , ( "^", ( 0, 0 ) )
         ]
 
 

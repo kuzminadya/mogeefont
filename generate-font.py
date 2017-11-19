@@ -10,12 +10,12 @@ import base64
 from PIL import Image
 
 WIDTH = 128
-HEIGHT = 64
+HEIGHT = 128
 DEST_PATH = os.path.realpath('./font.png')
 LINE_HEIGHT = 11
 
 
-TEMPLATE = """module View.FontData exposing (font, fontSrc, CharInfo)
+TEMPLATE = """module FontData exposing (font, fontSrc, CharInfo)
 
 import Dict exposing (Dict)
 
@@ -46,7 +46,7 @@ def main():
     chars = []
     for root, _, filenames in os.walk('./font'):
         for filename in filenames:
-            if any(fnmatch.fnmatch(filename, pattern) for pattern in ('*.gif', '*.png')):
+            if fnmatch.fnmatch(filename, '*.png'):
                 image_path = os.path.join(root, filename)
                 img = Image.open(image_path)
                 width, _ = img.size
@@ -70,9 +70,8 @@ def main():
             char_info += "        , %s\n" % val
     char_info += "        ]"
     font_src = "\"data:image/png;base64,%s\"" % base64.b64encode(buff.getvalue()).decode("utf-8")
-    with open("src/view/FontData.elm", "w") as f:
+    with open("src/FontData.elm", "w") as f:
         f.write(TEMPLATE % dict(char_info=char_info, font_src=font_src))
-    # result_img.save(DEST_PATH, "png")
 
 
 if __name__ == '__main__':
