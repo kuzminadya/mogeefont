@@ -17,7 +17,7 @@ elm make src/Main.elm --output index.html && open index.html
 
 ### Updating the font
 
-This requires Python and PIL installed.
+This requires Python and [Pillow](https://python-pillow.org/) installed.
 
 1. Make changes to files `font/` using unicode as filename (ligatures are separated by `_`).
 2. Run `./generate-font.py` to update `src/FontData.elm`.
