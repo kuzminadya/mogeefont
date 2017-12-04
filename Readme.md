@@ -2,7 +2,7 @@
 
 Bitmap font that is used in the [Mogee](https://unsoundscapes.itch.io/mogee) game.
 
-![specimen](specimen.png)
+![specimen](https://raw.githubusercontent.com/kuzminadya/mogeefont/master/specimen.png)
 
 ## Instructions
 
