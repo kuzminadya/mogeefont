@@ -1,7 +1,7 @@
 module MogeeFont exposing (text, fontSrc, Letter)
 
 {-| This module exports a font that may be rendered with [WebGL](package.elm-lang.org/packages/elm-community/webgl/latest).
-For example, check [the specimen implementation](https://github.com/kuzminadya/mogeefont/specimen).
+Check [the example](https://github.com/kuzminadya/mogeefont/blob/master/specimen/Main.elm).
 
 @docs Letter, text, fontSrc
 
@@ -47,7 +47,8 @@ type alias Letter =
     }
 
 
-{-| A base64 encoded black and white texture of the font in the data uri format
+{-| A base64 encoded black and white texture of the font in the data uri format.
+Can be loaded just as any remote url with [Texture.load](http://package.elm-lang.org/packages/elm-community/webgl/2.0.4/WebGL-Texture#load).
 -}
 fontSrc : String
 fontSrc =
