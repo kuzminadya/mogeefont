@@ -58,7 +58,7 @@ def main():
                     y_dest += LINE_HEIGHT
                 result_img.paste(img, (x_dest, y_dest))
                 chars.append('( "%s", CharInfo %d %d %d )' % (name, x_dest, y_dest, width))
-                x_dest += width
+                x_dest += width + 1
     buff = BytesIO()
     result_img = result_img.convert('1')
     result_img.save(buff, 'png')
