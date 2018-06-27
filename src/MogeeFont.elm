@@ -1,33 +1,33 @@
-module MogeeFont exposing (text, fontSrc, Letter)
+module MogeeFont exposing (Letter, spriteSrc, text)
 
 {-| This module exports a font that may be rendered with [WebGL](http://package.elm-lang.org/packages/elm-community/webgl/latest).
 Check [the example](https://github.com/kuzminadya/mogeefont/blob/master/specimen/Main.elm).
 
-@docs Letter, text, fontSrc
+@docs Letter, text, spriteSrc
 
 -}
 
 import Dict exposing (Dict)
+import FontData exposing (CharInfo, font)
 import String
-import FontData exposing (font, CharInfo)
 
 
 {-| A function to print the text, that takes:
 
-  - addLetter - function to append each letter
+  - addLetter - function to print a letter
   - string - text to be printed
 
-`addLetter` can for example append two triangles for each letter,
+`addLetter` can for example return two triangles for each letter,
 to construct a [WebGL](http://package.elm-lang.org/packages/elm-community/webgl/latest) mesh
 
 -}
-text : (Letter -> List a -> List a) -> String -> List a
+text : (Letter -> List a) -> String -> List a
 text addLetter string =
     let
         chars =
             List.reverse (replaceLigatures string [])
     in
-        textMeshHelper addLetter Nothing chars 0 0 []
+    textMeshHelper addLetter Nothing chars 0 0 []
 
 
 {-| Specifies information about the letter:
@@ -47,12 +47,12 @@ type alias Letter =
     }
 
 
-{-| A base64 encoded black and white texture of the font in the data uri format.
+{-| A black and white sprite containing all glyphs in the base64 data uri format.
 Can be loaded just as any remote url with [Texture.load](http://package.elm-lang.org/packages/elm-community/webgl/latest/WebGL-Texture#load).
 -}
-fontSrc : String
-fontSrc =
-    FontData.fontSrc
+spriteSrc : String
+spriteSrc =
+    FontData.spriteSrc
 
 
 emHeight : Float
@@ -235,7 +235,7 @@ kerning prevChar nextChar =
     List.filterMap identity
         [ Dict.get ( prevChar, nextChar ) kerningOverrides
         , Maybe.map2
-            (curry ((flip Dict.get) kerningDict))
+            (curry (flip Dict.get kerningDict))
             (Dict.get prevChar leftKerningClass)
             (Dict.get nextChar rightKerningClass)
             |> Maybe.andThen identity
@@ -262,13 +262,14 @@ takeLigature n st =
         ligature =
             String.left n st
     in
-        if String.length ligature == n && Dict.member ligature font then
-            Just ( ligature, String.dropLeft n st )
-        else
-            Nothing
+    if String.length ligature == n && Dict.member ligature font then
+        Just ( ligature, String.dropLeft n st )
+
+    else
+        Nothing
 
 
-textMeshHelper : (Letter -> List a -> List a) -> Maybe String -> List String -> Float -> Float -> List a -> List a
+textMeshHelper : (Letter -> List a) -> Maybe String -> List String -> Float -> Float -> List a -> List a
 textMeshHelper addLetter prevChar text currentX currentY list =
     case text of
         " " :: rest ->
@@ -280,16 +281,21 @@ textMeshHelper addLetter prevChar text currentX currentY list =
         char :: rest ->
             case Dict.get char font of
                 Just { x, y, w } ->
-                    addLetter
-                        { width = w
-                        , height = emHeight
-                        , textureX = x
-                        , textureY = y
-                        , x = currentX + letterSpacing prevChar char
-                        , y = currentY
-                        }
-                    <|
-                        textMeshHelper addLetter (Just char) rest (currentX + w + (letterSpacing prevChar char)) currentY list
+                    textMeshHelper addLetter
+                        (Just char)
+                        rest
+                        (currentX + w + letterSpacing prevChar char)
+                        currentY
+                        (addLetter
+                            { width = w
+                            , height = emHeight
+                            , textureX = x
+                            , textureY = y
+                            , x = currentX + letterSpacing prevChar char
+                            , y = currentY
+                            }
+                            ++ list
+                        )
 
                 Nothing ->
                     textMeshHelper addLetter prevChar rest currentX currentY list

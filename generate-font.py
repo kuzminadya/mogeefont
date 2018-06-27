@@ -15,7 +15,7 @@ DEST_PATH = os.path.realpath('./font.png')
 LINE_HEIGHT = 11
 
 
-TEMPLATE = """module FontData exposing (font, fontSrc, CharInfo)
+TEMPLATE = """module FontData exposing (CharInfo, font, spriteSrc)
 
 import Dict exposing (Dict)
 
@@ -33,10 +33,11 @@ font =
 %(char_info)s
 
 
-fontSrc : String
-fontSrc =
-    %(font_src)s
+spriteSrc : String
+spriteSrc =
+    %(sprite_src)s
 """
+
 
 def main():
     "The Main Function"
@@ -57,7 +58,8 @@ def main():
                     x_dest = 0
                     y_dest += LINE_HEIGHT
                 result_img.paste(img, (x_dest, y_dest))
-                chars.append('( "%s", CharInfo %d %d %d )' % (name, x_dest, y_dest, width))
+                chars.append('( "%s", CharInfo %d %d %d )' %
+                             (name, x_dest, y_dest, width))
                 x_dest += width + 1
     buff = BytesIO()
     result_img = result_img.convert('1')
@@ -69,10 +71,12 @@ def main():
         else:
             char_info += "        , %s\n" % val
     char_info += "        ]"
-    font_src = "\"data:image/png;base64,%s\"" % base64.b64encode(buff.getvalue()).decode("utf-8")
+    sprite_src = "\"data:image/png;base64,%s\"" % base64.b64encode(
+        buff.getvalue()).decode("utf-8")
     with open("src/FontData.elm", "w") as f:
-        f.write(TEMPLATE % dict(char_info=char_info, font_src=font_src))
+        f.write(TEMPLATE % dict(char_info=char_info, sprite_src=sprite_src))
 
 
 if __name__ == '__main__':
     main()
+    print("Generated src/FontData.elm")

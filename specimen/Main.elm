@@ -1,24 +1,22 @@
 module Specimen exposing (main)
 
-import Task exposing (Task)
-import Window exposing (Size)
-import Html
 import Html exposing (Html, div, textarea)
+import Html.Attributes exposing (attribute, autofocus, height, src, style, value, width)
 import Html.Events exposing (onInput)
-import Html.Attributes exposing (value, autofocus, height, src, style, width, attribute)
+import Http
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
-import WebGL exposing (Texture, Shader, Mesh, Entity)
-import WebGL.Texture as Texture exposing (Error, defaultOptions)
-import WebGL exposing (Entity)
 import MogeeFont exposing (Letter)
 import Navigation
-import Http
+import Task exposing (Task)
+import WebGL exposing (Entity, Mesh, Shader, Texture)
+import WebGL.Texture as Texture exposing (Error, defaultOptions)
+import Window exposing (Size)
 
 
 type alias Model =
     { size : Int
-    , font : Maybe Texture
+    , texture : Maybe Texture
     , text : String
     }
 
@@ -43,10 +41,11 @@ main =
 init : Navigation.Location -> ( Model, Cmd Msg )
 init { hash } =
     ( { size = 0
-      , font = Nothing
+      , texture = Nothing
       , text =
             if hash == "" then
                 "\nThe quick brown\nfox jumps over\nthe lazy dog"
+
             else
                 hashToText hash
       }
@@ -65,8 +64,8 @@ update action model =
             , Cmd.none
             )
 
-        TextureLoaded font ->
-            ( { model | font = Result.toMaybe font }
+        TextureLoaded texture ->
+            ( { model | texture = Result.toMaybe texture }
             , Cmd.none
             )
 
@@ -89,7 +88,7 @@ hashToText =
 
 
 view : Model -> Html Msg
-view { text, font, size } =
+view { text, texture, size } =
     div
         [ style
             [ ( "position", "absolute" )
@@ -150,7 +149,7 @@ view { text, font, size } =
                 , ( "-ms-interpolation-mode", "nearest-neighbor" )
                 ]
             ]
-            (font
+            (texture
                 |> Maybe.map (render text)
                 |> Maybe.withDefault []
             )
@@ -183,18 +182,17 @@ mesh =
     MogeeFont.text addLetter >> WebGL.triangles
 
 
-addLetter : MogeeFont.Letter -> List ( Vertex, Vertex, Vertex ) -> List ( Vertex, Vertex, Vertex )
+addLetter : MogeeFont.Letter -> List ( Vertex, Vertex, Vertex )
 addLetter { x, y, width, height, textureX, textureY } =
-    (::)
-        ( Vertex (vec2 x y) (vec2 textureX textureY)
-        , Vertex (vec2 (x + width) (y + height)) (vec2 (textureX + width) (textureY + height))
-        , Vertex (vec2 (x + width) y) (vec2 (textureX + width) textureY)
-        )
-        >> (::)
-            ( Vertex (vec2 x y) (vec2 textureX textureY)
-            , Vertex (vec2 x (y + height)) (vec2 textureX (textureY + height))
-            , Vertex (vec2 (x + width) (y + height)) (vec2 (textureX + width) (textureY + height))
-            )
+    [ ( Vertex (vec2 x y) (vec2 textureX textureY)
+      , Vertex (vec2 (x + width) (y + height)) (vec2 (textureX + width) (textureY + height))
+      , Vertex (vec2 (x + width) y) (vec2 (textureX + width) textureY)
+      )
+    , ( Vertex (vec2 x y) (vec2 textureX textureY)
+      , Vertex (vec2 x (y + height)) (vec2 textureX (textureY + height))
+      , Vertex (vec2 (x + width) (y + height)) (vec2 (textureX + width) (textureY + height))
+      )
+    ]
 
 
 
@@ -265,5 +263,5 @@ loadTexture msg =
             , minify = Texture.nearest
             , flipY = False
         }
-        MogeeFont.fontSrc
+        MogeeFont.spriteSrc
         |> Task.attempt msg
