@@ -3,7 +3,7 @@
     "name": "kuzminadya/mogeefont",
     "summary": "A bitmap font for the Mogee game",
     "license": "MIT",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "exposed-modules": [
         "MogeeFont"
     ],
