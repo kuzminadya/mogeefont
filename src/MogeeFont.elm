@@ -1,4 +1,4 @@
-module MogeeFont exposing (Letter, spriteSrc, text)
+module MogeeFont exposing (Letter, text, spriteSrc)
 
 {-| This module exports a font that may be rendered with [WebGL](http://package.elm-lang.org/packages/elm-community/webgl/latest).
 Check [the example](https://github.com/kuzminadya/mogeefont/blob/master/specimen/Main.elm).
@@ -235,7 +235,7 @@ kerning prevChar nextChar =
     List.filterMap identity
         [ Dict.get ( prevChar, nextChar ) kerningOverrides
         , Maybe.map2
-            (curry (flip Dict.get kerningDict))
+            (\a b -> Dict.get ( a, b ) kerningDict)
             (Dict.get prevChar leftKerningClass)
             (Dict.get nextChar rightKerningClass)
             |> Maybe.andThen identity
@@ -270,8 +270,8 @@ takeLigature n st =
 
 
 textMeshHelper : (Letter -> List a) -> Maybe String -> List String -> Float -> Float -> List a -> List a
-textMeshHelper addLetter prevChar text currentX currentY list =
-    case text of
+textMeshHelper addLetter prevChar text_ currentX currentY list =
+    case text_ of
         " " :: rest ->
             textMeshHelper addLetter (Just " ") rest (currentX + spaceWidth) currentY list
 

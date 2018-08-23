@@ -1,57 +1,66 @@
 module Specimen exposing (main)
 
+import Browser exposing (Document)
+import Browser.Dom exposing (Viewport, getViewport)
+import Browser.Events exposing (onResize)
+import Browser.Navigation as Navigation exposing (Key)
 import Html exposing (Html, div, textarea)
 import Html.Attributes exposing (attribute, autofocus, height, src, style, value, width)
 import Html.Events exposing (onInput)
 import Http
+import Json.Decode exposing (Value)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import MogeeFont exposing (Letter)
-import Navigation
 import Task exposing (Task)
-import WebGL exposing (Entity, Mesh, Shader, Texture)
-import WebGL.Texture as Texture exposing (Error, defaultOptions)
-import Window exposing (Size)
+import Url exposing (Url)
+import WebGL exposing (Entity, Mesh, Shader)
+import WebGL.Texture as Texture exposing (Error, Texture, defaultOptions)
 
 
 type alias Model =
-    { size : Int
+    { key : Key
+    , size : Int
     , texture : Maybe Texture
     , text : String
     }
 
 
 type Msg
-    = Resize Size
+    = Resize Int Int
     | TextureLoaded (Result Error Texture)
     | TextChange String
-    | UrlUpdate String
+    | Noop
 
 
-main : Program Never Model Msg
+main : Program Value Model Msg
 main =
-    Navigation.program (.hash >> UrlUpdate)
-        { init = init
+    Browser.application
+        { onUrlChange = urlToText >> TextChange
+        , onUrlRequest = always Noop
+        , init = init
         , update = update
         , view = view
-        , subscriptions = always (Window.resizes Resize)
+        , subscriptions = always (onResize Resize)
         }
 
 
-init : Navigation.Location -> ( Model, Cmd Msg )
-init { hash } =
+init : Value -> Url -> Key -> ( Model, Cmd Msg )
+init _ url key =
     ( { size = 0
+      , key = key
       , texture = Nothing
-      , text =
-            if hash == "" then
-                "\nThe quick brown\nfox jumps over\nthe lazy dog"
-
-            else
-                hashToText hash
+      , text = urlToText url
       }
     , Cmd.batch
         [ loadTexture TextureLoaded
-        , Task.perform Resize Window.size
+        , Task.perform
+            (\{ viewport } ->
+                Resize
+                    (round viewport.width)
+                    (round viewport.height)
+            )
+            getViewport
         ]
     )
 
@@ -59,7 +68,7 @@ init { hash } =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case action of
-        Resize { width, height } ->
+        Resize width height ->
             ( { model | size = min ((width - 10) // 2) (height - 10) // 64 * 64 }
             , Cmd.none
             )
@@ -70,90 +79,90 @@ update action model =
             )
 
         TextChange text ->
-            ( model
-            , Navigation.newUrl ("#" ++ Http.encodeUri text)
+            ( { model | text = text }
+            , if text /= model.text then
+                Navigation.pushUrl model.key ("#" ++ Url.percentEncode text)
+
+              else
+                Cmd.none
             )
 
-        UrlUpdate hash ->
-            ( { model | text = hashToText hash }
-            , Cmd.none
-            )
+        Noop ->
+            ( model, Cmd.none )
 
 
-hashToText : String -> String
-hashToText =
-    String.dropLeft 1
-        >> Http.decodeUri
-        >> Maybe.withDefault ""
+urlToText : Url -> String
+urlToText { fragment } =
+    fragment
+        |> Maybe.andThen Url.percentDecode
+        |> Maybe.withDefault "\nThe quick brown\nfox jumps over\nthe lazy dog"
 
 
-view : Model -> Html Msg
+view : Model -> Document Msg
 view { text, texture, size } =
-    div
-        [ style
-            [ ( "position", "absolute" )
-            , ( "left", "0" )
-            , ( "top", "0" )
-            , ( "width", "100%" )
-            , ( "height", "100%" )
-            , ( "background", "#000" )
+    { title = "MogeeFont"
+    , body =
+        [ div
+            [ style "position" "absolute"
+            , style "left" "0"
+            , style "top" "0"
+            , style "width" "100%"
+            , style "height" "100%"
+            , style "background" "#000"
+            ]
+            [ textarea
+                [ value text
+                , autofocus True
+                , style "right" "50%"
+                , style "width" (String.fromInt size ++ "px")
+                , style "height" (String.fromInt size ++ "px")
+                , style "margin-top" (String.fromInt (-size // 2) ++ "px")
+                , style "top" "50%"
+                , style "position" "absolute"
+                , style "box-sizing" "border-box"
+                , style "padding" ("0 " ++ String.fromInt (size // 64) ++ "px")
+                , style "border" "0"
+                , style "background" "#222"
+                , style "resize" "none"
+                , style "white-space" "nowrap"
+                , style "font-size" (String.fromFloat (toFloat size / 8) ++ "px")
+                , style "line-height" (String.fromFloat (toFloat size / 5.8) ++ "px")
+                , style "overflow-y" "hidden"
+                , style "outline" "none"
+                , style "color" "#aaa"
+                , style "font-family" "sans-serif"
+                , attribute "autocomplete" "off"
+                , attribute "autocorrect" "off"
+                , attribute "autocapitalize" "off"
+                , attribute "spellcheck" "false"
+                , onInput TextChange
+                ]
+                []
+            , WebGL.toHtmlWith
+                [ WebGL.depth 1
+                , WebGL.clearColor (22 / 255) (17 / 255) (22 / 255) 0
+                ]
+                [ width size
+                , height size
+                , style "display" "block"
+                , style "position" "absolute"
+                , style "top" "50%"
+                , style "left" "50%"
+                , style "margin-top" (String.fromInt (-size // 2) ++ "px")
+                , style "image-rendering" "optimizeSpeed"
+                , style "image-rendering" "-moz-crisp-edges"
+                , style "image-rendering" "-webkit-optimize-contrast"
+                , style "image-rendering" "crisp-edges"
+                , style "image-rendering" "pixelated"
+                , style "-ms-interpolation-mode" "nearest-neighbor"
+                ]
+                (texture
+                    |> Maybe.map (render text)
+                    |> Maybe.withDefault []
+                )
             ]
         ]
-        [ textarea
-            [ value text
-            , autofocus True
-            , style
-                [ ( "right", "50%" )
-                , ( "width", toString size ++ "px" )
-                , ( "height", toString size ++ "px" )
-                , ( "margin-top", toString (-size // 2) ++ "px" )
-                , ( "top", "50%" )
-                , ( "position", "absolute" )
-                , ( "box-sizing", "border-box" )
-                , ( "padding", "0 " ++ toString (size // 64) ++ "px" )
-                , ( "border", "0" )
-                , ( "background", "#222" )
-                , ( "resize", "none" )
-                , ( "white-space", "nowrap" )
-                , ( "font-size", toString (toFloat size / 8) ++ "px" )
-                , ( "line-height", toString (toFloat size / 5.8) ++ "px" )
-                , ( "overflow-y", "hidden" )
-                , ( "outline", "none" )
-                , ( "color", "#aaa" )
-                , ( "font-family", "sans-serif" )
-                ]
-            , attribute "autocomplete" "off"
-            , attribute "autocorrect" "off"
-            , attribute "autocapitalize" "off"
-            , attribute "spellcheck" "false"
-            , onInput TextChange
-            ]
-            []
-        , WebGL.toHtmlWith
-            [ WebGL.depth 1
-            , WebGL.clearColor (22 / 255) (17 / 255) (22 / 255) 0
-            ]
-            [ width size
-            , height size
-            , style
-                [ ( "display", "block" )
-                , ( "position", "absolute" )
-                , ( "top", "50%" )
-                , ( "left", "50%" )
-                , ( "margin-top", toString (-size // 2) ++ "px" )
-                , ( "image-rendering", "optimizeSpeed" )
-                , ( "image-rendering", "-moz-crisp-edges" )
-                , ( "image-rendering", "-webkit-optimize-contrast" )
-                , ( "image-rendering", "crisp-edges" )
-                , ( "image-rendering", "pixelated" )
-                , ( "-ms-interpolation-mode", "nearest-neighbor" )
-                ]
-            ]
-            (texture
-                |> Maybe.map (render text)
-                |> Maybe.withDefault []
-            )
-        ]
+    }
 
 
 
