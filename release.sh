@@ -10,7 +10,7 @@ version=$(grep -m1 version elm.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')
 git commit -a -m "Bump to $version"
 git push
 
-cleanup="specimen specimen.png font generate-font.py release.sh"
+cleanup="specimen specimen.png font generate-font.py release.sh gh-pages.sh"
 last_commit=$(git rev-parse HEAD)
 git clone --reference . git@github.com:kuzminadya/mogeefont.git release
 (
