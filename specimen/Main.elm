@@ -5,7 +5,7 @@ import Browser.Dom exposing (Viewport, getViewport)
 import Browser.Events exposing (onResize)
 import Browser.Navigation as Navigation exposing (Key)
 import Html exposing (Html, div, textarea)
-import Html.Attributes exposing (attribute, autofocus, height, src, style, value, width)
+import Html.Attributes exposing (attribute, height, src, style, value, width)
 import Html.Events exposing (onInput)
 import Http
 import Json.Decode exposing (Value)
@@ -112,7 +112,6 @@ view { text, texture, size } =
             ]
             [ textarea
                 [ value text
-                , autofocus True
                 , style "right" "50%"
                 , style "width" (String.fromInt size ++ "px")
                 , style "height" (String.fromInt size ++ "px")
